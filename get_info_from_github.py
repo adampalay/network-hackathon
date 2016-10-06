@@ -3,9 +3,8 @@ import re
 from collections import defaultdict
 import networkx as nx
 
-def get_pr_info(repo, access_token):
+def get_pr_info(repo, access_token, number_of_pages=20):
     # GET /repos/:owner/:repo/issues/comments
-    number_of_pages=20
     prs = []
     url = "https://api.github.com/repos/edx/{}/pulls?per_page=100&page={}&access_token={}&state=all"
     for page in range(1, number_of_pages + 1):
@@ -23,7 +22,8 @@ def get_pr_info(repo, access_token):
                 "closed_at": pr['closed_at'],
                 'merged_at': pr['merged_at'],
                 "body": pr['body'],
-                "tagged": tagged
+                "tagged": tagged,
+                "repo": repo,
             })
 
     return prs
@@ -41,6 +41,7 @@ def get_contributers(repo, access_token):
 
 
 def make_graph(contributers):
+    G = nx.DiGraph()
     G.add_nodes_from(contributers)
     for pr in prs:
         user = pr['user']
@@ -50,3 +51,4 @@ def make_graph(contributers):
                     G.add_weighted_edges_from([(user, tagged, 1)])
                 else:
                     G[user][tagged]['weight'] += 1
+    return G
